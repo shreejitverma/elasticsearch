@@ -19,7 +19,7 @@ import getpass
 
 
 TDVT_SDK_NAME = "connector-plugin-sdk"
-TDVT_SDK_REPO = "https://github.com/tableau/" + TDVT_SDK_NAME
+TDVT_SDK_REPO = f"https://github.com/tableau/{TDVT_SDK_NAME}"
 TDVT_SDK_BRANCH = "tdvt-2.1.9"
 TDVT_ES_SCHEME = "simple_lower"
 
@@ -144,12 +144,12 @@ def latest_tabquery():
 
     latest = ""
     for (dirpath, dirnames, filenames) in os.walk(TABLEAU_INSTALL_FOLDER, topdown=True):
-        if dirpath != TABLEAU_INSTALL_FOLDER:
-            pass #break
         for dirname in dirnames:
-            if re.match("^Tableau 202[0-9]\.[0-9]$", dirname):
-                if dirname > latest:
-                    latest = dirname
+            if (
+                re.match("^Tableau 202[0-9]\.[0-9]$", dirname)
+                and dirname > latest
+            ):
+                latest = dirname
     tabquery_path = os.path.join(TABLEAU_INSTALL_FOLDER, latest, TABQUERY_UNDERPATH)
     os.stat(tabquery_path) # check if the executable's there
     return tabquery_path
@@ -158,18 +158,17 @@ def config_tdvt_override_ini():
     TDVT_INI_PATH = os.path.join("config", "tdvt", "tdvt_override.ini")
 
     tabquery_path = latest_tabquery()
-    tabquery_path_line = "TAB_CLI_EXE_X64 = " + tabquery_path
+    tabquery_path_line = f"TAB_CLI_EXE_X64 = {tabquery_path}"
 
     updated_lines = []
     with open(TDVT_INI_PATH) as ini:
         for line in ini.readlines():
-            l = line if not line.startswith("TAB_CLI_EXE_X64") else tabquery_path_line
+            l = tabquery_path_line if line.startswith("TAB_CLI_EXE_X64") else line
             l += '\n'
             updated_lines.append(l)
     if len(updated_lines) <= 0:
-        print("WARNING: empty ini file under: " + TDVT_INI_PATH)
-        updated_lines.append("[DEFAULT]\n")
-        updated_lines.append(tabquery_path_line + '\n')
+        print(f"WARNING: empty ini file under: {TDVT_INI_PATH}")
+        updated_lines.extend(("[DEFAULT]\n", tabquery_path_line + '\n'))
     with open(TDVT_INI_PATH, "w") as ini:
         ini.writelines(updated_lines)
 
@@ -183,8 +182,8 @@ def add_data_source():
 def config_elastic_ini():
     ELASTIC_INI = os.path.join("config", "elastic.ini")
 
-    cmdline_override = "CommandLineOverride = -DConnectPluginsPath=%s -DDisableVerifyConnectorPluginSignature=%s" % \
-            (TACO_SRC_DIR, TACO_SIGNED)
+    cmdline_override = f"CommandLineOverride = -DConnectPluginsPath={TACO_SRC_DIR} -DDisableVerifyConnectorPluginSignature={TACO_SIGNED}"
+
 
     updated_lines = []
     with open(ELASTIC_INI) as ini:
